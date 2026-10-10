@@ -22,6 +22,105 @@ const parseAiJson = (value) => {
   }
 };
 
+const knownSkills = [
+  "JavaScript",
+  "TypeScript",
+  "React",
+  "Redux",
+  "Node.js",
+  "Express",
+  "MongoDB",
+  "Mongoose",
+  "HTML",
+  "CSS",
+  "Tailwind",
+  "Bootstrap",
+  "Firebase",
+  "Git",
+  "GitHub",
+  "REST API",
+  "Python",
+  "Java",
+  "C++",
+  "SQL",
+  "MySQL",
+  "PostgreSQL",
+  "AWS",
+  "Docker",
+];
+
+const rolePatterns = [
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "MERN Stack Developer",
+  "Software Developer",
+  "Software Engineer",
+  "Web Developer",
+  "Data Analyst",
+  "UI Developer",
+];
+
+const extractListSection = (text, headings) => {
+  const headingPattern = headings.join("|");
+  const regex = new RegExp(`(?:${headingPattern})\\s*[:\\-]?\\s*([\\s\\S]{0,700})`, "i");
+  const match = text.match(regex);
+
+  if (!match) {
+    return [];
+  }
+
+  return match[1]
+    .split(/[\n,;•|]+/)
+    .map((item) => item.replace(/^\W+|\W+$/g, "").trim())
+    .filter((item) => item.length > 1)
+    .slice(0, 8);
+};
+
+const fallbackResumeAnalysis = (resumeText) => {
+  const normalizedText = resumeText.replace(/\s+/g, " ").trim();
+  const lowerText = normalizedText.toLowerCase();
+
+  const role = rolePatterns.find((candidateRole) =>
+    lowerText.includes(candidateRole.toLowerCase())
+  ) || "";
+
+  const experienceMatch = normalizedText.match(/(\d+(?:\.\d+)?)\+?\s*(?:years?|yrs?)\s+(?:of\s+)?experience/i);
+  const experience = experienceMatch ? `${experienceMatch[1]} years` : "";
+
+  const skills = knownSkills.filter((skill) =>
+    lowerText.includes(skill.toLowerCase())
+  );
+
+  const projects = extractListSection(normalizedText, [
+    "Projects",
+    "Academic Projects",
+    "Personal Projects",
+    "Experience",
+  ]);
+
+  return {
+    role,
+    experience,
+    projects,
+    skills,
+  };
+};
+
+const askResumeAi = (messages) => {
+  let timeoutId;
+
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error("Resume AI analysis timed out."));
+    }, 15000);
+  });
+
+  return Promise.race([askAi(messages), timeout]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+};
+
 export const analyzeResume = async (req, res) => {
   try {
     if (!req.file) {
@@ -49,7 +148,11 @@ export const analyzeResume = async (req, res) => {
       .replace(/\s+/g, " ")
       .trim();
 
-      const messages = [
+    if (!resumeText) {
+      throw new Error("No readable text found in this PDF.");
+    }
+
+    const messages = [
       {
         role: "system",
         content: `
@@ -67,22 +170,29 @@ Return strictly JSON:
       },
       {
         role: "user",
-        content: resumeText
+        content: resumeText.slice(0, 12000)
       }
     ];
 
-    const aiResponse = await askAi(messages)
+    let parsed = fallbackResumeAnalysis(resumeText);
 
-    const parsed = parseAiJson(aiResponse);
+    try {
+      const aiResponse = await askResumeAi(messages)
+      parsed = {
+        ...parsed,
+        ...parseAiJson(aiResponse),
+      };
+    } catch (error) {
+      console.warn("Resume AI analysis failed, using fallback parser:", error.message);
+    }
 
     fs.unlinkSync(filepath)
 
-
     res.json({
-      role: parsed.role,
-      experience: parsed.experience,
-      projects: parsed.projects,
-      skills: parsed.skills,
+      role: parsed.role || "",
+      experience: parsed.experience || "",
+      projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+      skills: Array.isArray(parsed.skills) ? parsed.skills : [],
       resumeText
     });
 

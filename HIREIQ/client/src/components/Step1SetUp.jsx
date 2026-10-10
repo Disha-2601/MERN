@@ -39,7 +39,10 @@ function Step1SetUp({onStart}) {
         formdata.append("resume", resumeFile)
 
         try {
-            const result = await axios.post(ServerUrl + "/api/interview/resume", formdata, { withCredentials: true })
+            const result = await axios.post(ServerUrl + "/api/interview/resume", formdata, {
+                withCredentials: true,
+                timeout: 30000,
+            })
 
             console.log(result.data)
 
@@ -50,11 +53,14 @@ function Step1SetUp({onStart}) {
             setResumeText(result.data.resumeText || "");
             setAnalysisDone(true);
 
-            setAnalyzing(false);
-
         } catch (error) {
             console.log(error)
-            setErrorMessage(error.response?.data?.message || "Resume could not be analyzed. Please try again.")
+            setErrorMessage(
+                error.code === "ECONNABORTED"
+                    ? "Resume analysis took too long. Please try again or start without resume analysis."
+                    : error.response?.data?.message || "Resume could not be analyzed. Please try again."
+            )
+        } finally {
             setAnalyzing(false);
         }
     }
