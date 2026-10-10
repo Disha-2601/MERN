@@ -27,6 +27,7 @@ function Step1SetUp({onStart}) {
     const [resumeText, setResumeText] = useState("");
     const [analysisDone, setAnalysisDone] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
 
  const handleUploadResume = async () => {
@@ -58,6 +59,7 @@ function Step1SetUp({onStart}) {
 
      const handleStart = async () => {
         setLoading(true)
+        setErrorMessage("")
         try {
            const result = await axios.post(ServerUrl + "/api/interview/generate-questions" , {role, experience, mode , resumeText, projects, skills } , {withCredentials:true}) 
            console.log(result.data)
@@ -69,6 +71,7 @@ function Step1SetUp({onStart}) {
 
         } catch (error) {
             console.log(error)
+            setErrorMessage(error.response?.data?.message || "Interview could not start. Please try again.")
             setLoading(false)
         }
     }
@@ -284,6 +287,12 @@ function Step1SetUp({onStart}) {
                         className='interview-setup-start w-full disabled:bg-gray-600 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md'>
                             {loading ? "Starting...":"Start Interview"}
                         </motion.button>
+
+                        {errorMessage && (
+                            <p className='rounded-xl bg-red-50 px-4 py-3 text-center text-sm leading-5 text-red-600'>
+                                {errorMessage}
+                            </p>
+                        )}
 
                         <p className='interview-setup-helper text-center text-xs leading-5 text-gray-500'>
                             You can start without a resume. Add one only if you want a more personalized technical round.

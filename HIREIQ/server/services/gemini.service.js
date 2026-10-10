@@ -1,6 +1,7 @@
 import axios from "axios"
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash"
+const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 45000)
 
 const toGeminiPayload = (messages) => {
     const systemText = messages
@@ -47,6 +48,7 @@ export const askAi = async (messages) => {
             `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
             payload,
             {
+                timeout: GEMINI_TIMEOUT_MS,
                 headers: {
                     "Content-Type": "application/json",
                     "x-goog-api-key": process.env.GEMINI_API_KEY
@@ -66,6 +68,9 @@ export const askAi = async (messages) => {
         return content
     } catch (error) {
         console.error("Gemini Error:", error.response?.data || error.message)
+        if (error.code === "ECONNABORTED") {
+            throw new Error("Gemini request timed out. Try again in a moment.")
+        }
         throw new Error("Gemini API Error")
     }
 }
