@@ -11,7 +11,11 @@ import paymentRouter from "./routes/payment.route.js"
 
 
 const app = express()
-const allowedOrigins = ["https://hireiq-arqm.onrender.com"]
+const allowedOrigins = [
+    "https://hireiq-arqm.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 app.use(cors({
     origin(origin, callback) {

@@ -11,7 +11,7 @@ import InterviewHistory from './pages/InterviewHistory'
 import Pricing from './pages/Pricing'
 import InterviewReport from './pages/InterviewReport'
 
-export const ServerUrl  = "https://mern-3z7u.onrender.com"
+export const ServerUrl = import.meta.env.VITE_SERVER_URL || "https://mern-3z7u.onrender.com"
 
 function App() {
   const dispatch = useDispatch()
