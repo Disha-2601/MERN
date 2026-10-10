@@ -5,7 +5,7 @@ import Timer from "./Timer";
 import { motion } from "motion/react";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import axios from "axios";
-import { ServerUrl } from "../App";
+import { ServerUrl } from "../config/api";
 import { BsArrowRight, BsClock, BsSoundwave } from "react-icons/bs";
 
 function Step2Interview({ interviewData, onFinish }) {
@@ -79,6 +79,24 @@ function Step2Interview({ interviewData, onFinish }) {
   }, []);
 
   const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
+
+  function startMic() {
+    if (recognitionRef.current && !isAIPlaying) {
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        if (error.name !== "InvalidStateError") {
+          console.log(error);
+        }
+      }
+    }
+  }
+
+  function stopMic() {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  }
 
   /* ---------------- SPEAK FUNCTION ---------------- */
   const speakText = (text) => {
@@ -183,15 +201,6 @@ function Step2Interview({ interviewData, onFinish }) {
 
 
   useEffect(() => {
-  if (!isIntroPhase && currentQuestion) {
-    setTimeLeft(currentQuestion.timeLimit || 60);
-  }
-}, [currentIndex]);
-
-
-
-
-  useEffect(() => {
     if (!("webkitSpeechRecognition" in window)) return;
 
     const recognition = new window.webkitSpeechRecognition();
@@ -207,20 +216,6 @@ function Step2Interview({ interviewData, onFinish }) {
 
     recognitionRef.current = recognition;
   }, []);
-
-  const startMic = () => {
-    if (recognitionRef.current && !isAIPlaying) {
-      try {
-        recognitionRef.current.start();
-      } catch {}
-    }
-  };
-
-  const stopMic = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-  };
 
   const toggleMic = () => {
     if (isMicOn) {
@@ -270,7 +265,9 @@ function Step2Interview({ interviewData, onFinish }) {
 
     await speakText("Alright, let's move to the next question.");
 
-    setCurrentIndex(currentIndex + 1);
+    const nextIndex = currentIndex + 1;
+    setCurrentIndex(nextIndex);
+    setTimeLeft(questions[nextIndex]?.timeLimit || 60);
     setTimeout(() => {
       if (isMicOn) startMic();
     }, 500);
@@ -297,7 +294,11 @@ function Step2Interview({ interviewData, onFinish }) {
     if (!currentQuestion) return;
 
     if (timeLeft === 0 && !isSubmitting && !feedback) {
-      submitAnswer()
+      const submitTimer = setTimeout(() => {
+        submitAnswer()
+      }, 0);
+
+      return () => clearTimeout(submitTimer);
     }
   }, [timeLeft]);
 

@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { setUserData } from '../redux/userSlice';
-import { ServerUrl } from '../App';
+import { ServerUrl } from '../config/api';
 import AuthModel from './AuthModel';
 import ThemeToggle from './ThemeToggle';
 
