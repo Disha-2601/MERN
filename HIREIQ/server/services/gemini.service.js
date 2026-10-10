@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash"
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite"
 const GEMINI_TIMEOUT_MS = Number(process.env.GEMINI_TIMEOUT_MS || 45000)
 
 const toGeminiPayload = (messages) => {
