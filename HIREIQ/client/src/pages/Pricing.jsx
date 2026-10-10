@@ -71,10 +71,14 @@ function Pricing() {
         amount: amount,
         credits: plan.credits,
       },{withCredentials:true})
+
+      if (!result.data.keyId) {
+        throw new Error("Razorpay key is missing from payment order.")
+      }
       
 
       const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      key: result.data.keyId,
       amount: result.data.amount,
       currency: "INR",
       name: "HireIQ",
@@ -96,11 +100,16 @@ function Pricing() {
       }
 
       const rzp = new window.Razorpay(options)
+      rzp.on("payment.failed", function (response) {
+        console.log(response.error)
+        alert(response.error?.description || "Payment failed. Please try again.")
+      })
       rzp.open()
 
       setLoadingPlan(null);
     } catch (error) {
      console.log(error)
+     alert(error.response?.data?.message || error.message || "Payment could not be started. Please try again.")
      setLoadingPlan(null);
     }
   }

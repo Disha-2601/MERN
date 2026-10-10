@@ -7,6 +7,10 @@ export const createOrder = async (req,res) => {
     try {
         const {planId, amount, credits} = req.body;
 
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ message: "Razorpay keys are not configured." });
+    }
+
     const paidPlans = {
       basic: { amount: 100, credits: 150 },
       pro: { amount: 500, credits: 650 },
@@ -34,7 +38,10 @@ export const createOrder = async (req,res) => {
       status: "created",
     });
 
-    return res.json(order);
+    return res.json({
+      ...order,
+      keyId: process.env.RAZORPAY_KEY_ID,
+    });
 
     
     } catch (error) {
@@ -48,6 +55,14 @@ export const verifyPayment = async (req,res) => {
         const {razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature} = req.body
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ message: "Missing Razorpay payment details" });
+    }
+
+    if (!process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ message: "Razorpay secret is not configured." });
+    }
 
       const body = razorpay_order_id + "|" + razorpay_payment_id;
 
