@@ -4,6 +4,24 @@ import { askAi } from "../services/gemini.service.js";
 import User from "../models/user.model.js";
 import Interview from "../models/interview.model.js";
 
+const parseAiJson = (value) => {
+  const text = String(value || "").trim();
+  const jsonText = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    const match = jsonText.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error("AI returned invalid JSON.");
+    }
+    return JSON.parse(match[0]);
+  }
+};
+
 export const analyzeResume = async (req, res) => {
   try {
     if (!req.file) {
@@ -55,7 +73,7 @@ Return strictly JSON:
 
     const aiResponse = await askAi(messages)
 
-    const parsed = JSON.parse(aiResponse);
+    const parsed = parseAiJson(aiResponse);
 
     fs.unlinkSync(filepath)
 
@@ -314,7 +332,7 @@ Answer: ${answer}
     const aiResponse = await askAi(messages)
 
 
-    const parsed = JSON.parse(aiResponse);
+    const parsed = parseAiJson(aiResponse);
 
     question.answer = answer;
     question.confidence = parsed.confidence;

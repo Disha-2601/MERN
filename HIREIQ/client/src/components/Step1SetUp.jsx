@@ -33,6 +33,7 @@ function Step1SetUp({onStart}) {
  const handleUploadResume = async () => {
         if (!resumeFile || analyzing) return;
         setAnalyzing(true)
+        setErrorMessage("")
 
         const formdata = new FormData()
         formdata.append("resume", resumeFile)
@@ -53,6 +54,7 @@ function Step1SetUp({onStart}) {
 
         } catch (error) {
             console.log(error)
+            setErrorMessage(error.response?.data?.message || "Resume could not be analyzed. Please try again.")
             setAnalyzing(false);
         }
     }
@@ -224,6 +226,7 @@ function Step1SetUp({onStart}) {
 
                                 {resumeFile && (
                                     <motion.button
+                                        type="button"
                                         whileHover={{ scale: 1.02 }}
                                         onClick={(e) => {
                                             e.stopPropagation();
